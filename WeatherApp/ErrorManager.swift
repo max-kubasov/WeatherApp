@@ -9,3 +9,4 @@ import Foundation
 
 public let SWINetworkingErrorDomain = "com.swiftmax.WeatherApp.NetworkingError"
 public let MissingHTTPResponse = 100
+public let UnexpectedResponseError = 200

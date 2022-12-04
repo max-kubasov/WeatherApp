@@ -19,10 +19,8 @@ protocol APIManager {
     var sessionConfiguration: URLSessionConfiguration { get }
     var session: URLSession { get }
     
-    func JSONTaskWith(request: URLRequest, complitionHeandler: JSONComplitionHandler) -> JSONTask
-    func fetch<T>(request: URLRequest, parse: ([String: AnyObject]) -> T?, copletionHandler: (APIResult<T>) -> Void )
-    
-    init(sessionConfiguration: URLSessionConfiguration)
+    func JSONTaskWith(request: URLRequest, complitionHeandler: @escaping JSONComplitionHandler) -> JSONTask
+    func fetch<T>(request: URLRequest, parse: @escaping ([String: AnyObject]) -> T?, copletionHandler: @escaping (APIResult<T>) -> Void )
 }
 
 extension APIManager {
@@ -44,7 +42,7 @@ extension APIManager {
             
             if data == nil {
                 if let error = error {
-                    complitionHeandler(nil, HTTPResponse, nil)
+                    complitionHeandler(nil, HTTPResponse, error)
                 }
             } else {
                 switch HTTPResponse.statusCode {
@@ -61,5 +59,26 @@ extension APIManager {
             }
         }
         return dataTask
+    }
+    
+    func fetch<T>(request: URLRequest, parse: @escaping ([String: AnyObject]) -> T?, copletionHandler: @escaping (APIResult<T>) -> Void ) {
+        
+        let dataTask = JSONTaskWith(request: request) { json, response, error in
+            
+            guard let json = json else {
+                if let error = error {
+                    copletionHandler(.Failure(error))
+                }
+                return
+            }
+            
+            if let value = parse(json) {
+                copletionHandler(.Success(value))
+            } else {
+                let error = NSError(domain: SWINetworkingErrorDomain, code: 200, userInfo: nil)
+                copletionHandler(.Failure(error))
+            }
+        }
+        dataTask.resume()
     }
 }
